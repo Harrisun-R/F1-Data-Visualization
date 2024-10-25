@@ -25,7 +25,7 @@ def get_f1_data(endpoint):
 
 # Load driver standings data for 2023
 st.subheader("Driver Standings Data")
-standings_data = get_f1_data("2023/driverStandings")
+standings_data = get_f1_data("2024/driverStandings")
 drivers = standings_data['MRData']['StandingsTable']['StandingsLists'][0]['DriverStandings']
 
 # Convert driver standings to DataFrame
