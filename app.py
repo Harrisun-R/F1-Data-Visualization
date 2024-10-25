@@ -1,9 +1,13 @@
+import os
 import streamlit as st
 import fastf1 as ff1
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 from datetime import datetime
+
+cache_path = os.path.join(os.getcwd(), 'cache')
+os.makedirs(cache_path, exist_ok=True)
 
 # Initialize FastF1 caching
 ff1.Cache.enable_cache('cache')
