@@ -6,11 +6,12 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from datetime import datetime
 
+# Set up a cache directory
 cache_path = os.path.join(os.getcwd(), 'cache')
 os.makedirs(cache_path, exist_ok=True)
 
 # Initialize FastF1 caching
-ff1.Cache.enable_cache('cache')
+ff1.Cache.enable_cache(cache_path)
 
 # Page configuration
 st.set_page_config(
@@ -35,7 +36,7 @@ race_round = st.sidebar.selectbox("Select Race Round", list(range(1, 24)))
 @st.cache_data
 def load_session_data(year, race_round):
     try:
-        session = ff1.get_session(year, race_round, 'R')
+        session = ff1.get_session(year, race_round, 'R')  # Ensure it's a race session
         session.load()
         return session
     except Exception as e:
@@ -54,33 +55,37 @@ if session:
     - **Laps**: {session.event['Laps']}
     - **Circuit Length**: {session.event['CircuitLength']}
     """)
-    
-    # Data analysis options
-    analysis_option = st.sidebar.radio(
-        "Select Analysis",
-        ("Lap Times", "Telemetry Comparison", "Driver Fastest Lap", "Pit Stops Analysis")
-    )
 
-    # Lap Times Analysis
-    if analysis_option == "Lap Times":
-        st.subheader("Lap Times Analysis")
-        
-        # Fetch lap times data
-        laps = session.laps
-        driver_lap_times = laps[["Driver", "LapTime", "LapNumber"]]
-        
-        # Display data
-        st.write("Lap times data for all drivers:")
-        st.dataframe(driver_lap_times)
-        
-        # Plot lap times
-        plt.figure(figsize=(12, 6))
-        sns.lineplot(data=driver_lap_times, x="LapNumber", y="LapTime", hue="Driver")
-        plt.title("Lap Times for Each Driver")
-        plt.xlabel("Lap Number")
-        plt.ylabel("Lap Time (s)")
-        plt.xticks(rotation=90)
-        st.pyplot(plt)
+    # Check for lap data
+    if 'Laps' not in session.__dict__:
+        st.error("No lap data available for this session.")
+    else:
+        # Data analysis options
+        analysis_option = st.sidebar.radio(
+            "Select Analysis",
+            ("Lap Times", "Telemetry Comparison", "Driver Fastest Lap", "Pit Stops Analysis")
+        )
+
+        # Lap Times Analysis
+        if analysis_option == "Lap Times":
+            st.subheader("Lap Times Analysis")
+            
+            # Fetch lap times data
+            laps = session.laps
+            driver_lap_times = laps[["Driver", "LapTime", "LapNumber"]]
+            
+            # Display data
+            st.write("Lap times data for all drivers:")
+            st.dataframe(driver_lap_times)
+            
+            # Plot lap times
+            plt.figure(figsize=(12, 6))
+            sns.lineplot(data=driver_lap_times, x="LapNumber", y="LapTime", hue="Driver")
+            plt.title("Lap Times for Each Driver")
+            plt.xlabel("Lap Number")
+            plt.ylabel("Lap Time (s)")
+            plt.xticks(rotation=90)
+            st.pyplot(plt)
 
     # Telemetry Comparison
     elif analysis_option == "Telemetry Comparison":
