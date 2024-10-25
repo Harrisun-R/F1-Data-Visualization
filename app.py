@@ -31,7 +31,7 @@ drivers = standings_data['MRData']['StandingsTable']['StandingsLists'][0]['Drive
 driver_standings_df = pd.DataFrame([
     {
         "position": driver["position"],
-        "driver": driver["Driver"]["familyName"],
+        "driver": f"{driver['Driver']['givenName']} {driver['Driver']['familyName']}",
         "points": driver["points"],
         "wins": driver["wins"],
         "constructor": driver["Constructors"][0]["name"]
@@ -58,7 +58,7 @@ race_results_df = pd.DataFrame([
         "round": race["round"],
         "date": race["date"],
         "circuit": race["Circuit"]["circuitName"],
-        "driver": result["Driver"]["familyName"],
+        "driver": f"{result['Driver']['givenName']} {result['Driver']['familyName']}",
         "constructor": result["Constructor"]["name"],
         "position": result["position"],
         "status": result["status"]
@@ -69,13 +69,17 @@ st.write(race_results_df)
 
 # Data Preprocessing for ML Model
 st.subheader("Data Preprocessing and Model Training")
-# Encode categorical variables
+# Encode categorical variables and create mappings
 race_results_df['position'] = pd.to_numeric(race_results_df['position'], errors='coerce').fillna(0)
-race_results_df['constructor'] = race_results_df['constructor'].astype('category').cat.codes
-race_results_df['driver'] = race_results_df['driver'].astype('category').cat.codes
+race_results_df['constructor_code'] = race_results_df['constructor'].astype('category').cat.codes
+race_results_df['driver_code'] = race_results_df['driver'].astype('category').cat.codes
+
+# Create dictionaries for driver and constructor mappings
+driver_map = dict(enumerate(race_results_df['driver'].astype('category').cat.categories))
+constructor_map = dict(enumerate(race_results_df['constructor'].astype('category').cat.categories))
 
 # Select features and target
-X = race_results_df[['constructor', 'driver']]
+X = race_results_df[['constructor_code', 'driver_code']]
 y = race_results_df['position'] <= 3  # Predicting if the driver finished in the top 3
 
 # Split data into training and testing sets
@@ -102,14 +106,19 @@ st.pyplot(fig)
 
 # Predict for a new driver and constructor combination
 st.subheader("Predict Race Outcome")
-constructor = st.selectbox("Select Constructor", race_results_df['constructor'].unique())
-driver = st.selectbox("Select Driver", race_results_df['driver'].unique())
+# Dropdown with driver and constructor names
+constructor_name = st.selectbox("Select Constructor", options=list(constructor_map.values()), format_func=lambda x: constructor_map[x])
+driver_name = st.selectbox("Select Driver", options=list(driver_map.values()), format_func=lambda x: driver_map[x])
+
+# Get codes for selected driver and constructor
+constructor_code = {v: k for k, v in constructor_map.items()}[constructor_name]
+driver_code = {v: k for k, v in driver_map.items()}[driver_name]
 
 # Predict the likelihood of finishing in the top 3
-prediction = model.predict([[constructor, driver]])
+prediction = model.predict([[constructor_code, driver_code]])
 if prediction:
-    st.write("This combination has a high likelihood of finishing in the top 3!")
+    st.write(f"{driver_name} driving for {constructor_name} has a high likelihood of finishing in the top 3!")
 else:
-    st.write("This combination is unlikely to finish in the top 3.")
+    st.write(f"{driver_name} driving for {constructor_name} is unlikely to finish in the top 3.")
 
 st.write("Thank you for using the F1 Data Analysis and Prediction App.")
