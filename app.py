@@ -12,7 +12,7 @@ st.set_page_config(page_title="F1 Data Visualization", layout="wide")
 
 # Function to fetch data from OpenF1 API
 def fetch_openf1_data(endpoint):
-    base_url = f"https://api.openf1.com/{endpoint}"
+    base_url = f"https://api.openf1.com/v1/{endpoint}"
     try:
         response = requests.get(base_url)
         response.raise_for_status()
