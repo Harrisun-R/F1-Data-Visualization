@@ -11,8 +11,8 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 # Streamlit app title and description
-st.title("Advanced Formula 1 Data Analysis and Prediction App")
-st.write("Explore Formula 1 data, analyze past race statistics, and predict future race outcomes using multiple machine learning models.")
+st.title("Advanced Formula 1 Data Analysis and Prediction App (2010-2024)")
+st.write("Explore Formula 1 data from 2010 to 2024, analyze past race statistics, and predict future race outcomes using machine learning models.")
 
 # Define function to get data from F1 API
 @st.cache
@@ -23,62 +23,77 @@ def get_f1_data(endpoint):
     data = response.json()
     return data
 
-# Load driver standings data for 2023
-st.subheader("Driver Standings Data")
-standings_data = get_f1_data("2024/driverStandings")
-drivers = standings_data['MRData']['StandingsTable']['StandingsLists'][0]['DriverStandings']
+# Collect data from 2010 to 2024 for race results and driver standings
+all_driver_standings = []
+all_race_results = []
 
-# Convert driver standings to DataFrame
-driver_standings_df = pd.DataFrame([
-    {
-        "position": driver["position"],
-        "driver": f"{driver['Driver']['givenName']} {driver['Driver']['familyName']}",
-        "points": driver["points"],
-        "wins": driver["wins"],
-        "constructor": driver["Constructors"][0]["name"]
-    }
-    for driver in drivers
-])
+for year in range(2010, 2025):  # Adjust range to include 2024
+    # Driver Standings Data
+    standings_data = get_f1_data(f"{year}/driverStandings")
+    drivers = standings_data['MRData']['StandingsTable']['StandingsLists'][0]['DriverStandings']
+    driver_standings_df = pd.DataFrame([
+        {
+            "year": year,
+            "position": driver["position"],
+            "driver": f"{driver['Driver']['givenName']} {driver['Driver']['familyName']}",
+            "points": driver["points"],
+            "wins": driver["wins"],
+            "constructor": driver["Constructors"][0]["name"]
+        }
+        for driver in drivers
+    ])
+    all_driver_standings.append(driver_standings_df)
+    
+    # Race Results Data
+    race_results_data = get_f1_data(f"{year}/results")
+    races = race_results_data['MRData']['RaceTable']['Races']
+    race_results_df = pd.DataFrame([
+        {
+            "year": year,
+            "race_name": race["raceName"],
+            "round": race["round"],
+            "date": race["date"],
+            "circuit": race["Circuit"]["circuitName"],
+            "driver": f"{result['Driver']['givenName']} {result['Driver']['familyName']}",
+            "constructor": result["Constructor"]["name"],
+            "position": result["position"],
+            "status": result["status"]
+        }
+        for race in races for result in race["Results"]
+    ])
+    all_race_results.append(race_results_df)
+
+# Combine all years' data into single DataFrames
+driver_standings_df = pd.concat(all_driver_standings, ignore_index=True)
+race_results_df = pd.concat(all_race_results, ignore_index=True)
+
+# Display Driver Standings Data
+st.subheader("Driver Standings Data")
 st.write(driver_standings_df)
 
-# Load race results data and allow user to select a year
-year = st.selectbox("Select Year", options=[str(y) for y in range(2010, 2024)], index=13)
-race_results_data = get_f1_data(f"{year}/results")
-races = race_results_data['MRData']['RaceTable']['Races']
-
-# Convert race results to DataFrame
-race_results_df = pd.DataFrame([
-    {
-        "race_name": race["raceName"],
-        "round": race["round"],
-        "date": race["date"],
-        "circuit": race["Circuit"]["circuitName"],
-        "driver": f"{result['Driver']['givenName']} {result['Driver']['familyName']}",
-        "constructor": result["Constructor"]["name"],
-        "position": result["position"],
-        "status": result["status"]
-    }
-    for race in races for result in race["Results"]
-])
-st.write(race_results_df)
+# Data Exploration for the Selected Year
+selected_year = st.selectbox("Select Year", options=sorted(driver_standings_df['year'].unique()), index=len(driver_standings_df['year'].unique()) - 1)
+st.subheader(f"Race Results Data for {selected_year}")
+yearly_results_df = race_results_df[race_results_df['year'] == selected_year]
+st.write(yearly_results_df)
 
 # Exploratory Data Analysis (EDA)
 st.subheader("Exploratory Data Analysis")
 
 # Points distribution by constructor
 st.subheader("Points Distribution by Constructor")
-constructor_points_df = driver_standings_df.groupby("constructor")["points"].sum().reset_index()
+constructor_points_df = driver_standings_df[driver_standings_df['year'] == selected_year].groupby("constructor")["points"].sum().reset_index()
 fig, ax = plt.subplots()
 sns.barplot(x="points", y="constructor", data=constructor_points_df, ax=ax)
-ax.set_title("Total Points by Constructor in 2023")
+ax.set_title(f"Total Points by Constructor in {selected_year}")
 st.pyplot(fig)
 
 # Wins distribution by driver
 st.subheader("Wins Distribution by Driver")
-driver_wins_df = driver_standings_df[["driver", "wins"]].sort_values(by="wins", ascending=False)
+driver_wins_df = driver_standings_df[driver_standings_df['year'] == selected_year][["driver", "wins"]].sort_values(by="wins", ascending=False)
 fig, ax = plt.subplots()
 sns.barplot(x="wins", y="driver", data=driver_wins_df, ax=ax)
-ax.set_title("Total Wins by Driver in 2023")
+ax.set_title(f"Total Wins by Driver in {selected_year}")
 st.pyplot(fig)
 
 # Data Preprocessing for Machine Learning Models
