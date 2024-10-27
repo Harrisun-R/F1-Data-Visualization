@@ -40,9 +40,11 @@ st.subheader(f"Driver: {driver} - Analysis")
 
 # Plotting Telemetry Data for a specific lap
 st.markdown("### Lap Telemetry Data")
-lap_number = st.sidebar.selectbox("Select Lap", driver_laps['LapNumber'])
+lap_number = st.sidebar.selectbox("Select Lap", driver_laps['LapNumber'].unique())
 selected_lap = driver_laps[driver_laps['LapNumber'] == lap_number].iloc[0]  # Ensure selecting only one lap
-lap_telemetry = selected_lap.get_car_data().add_distance()  # Get telemetry for the selected lap
+
+# Extract telemetry data directly from the specific lap
+lap_telemetry = selected_lap.get_telemetry().add_distance()  # Get telemetry for the selected lap
 
 # Plot telemetry
 fig, ax = plt.subplots()
