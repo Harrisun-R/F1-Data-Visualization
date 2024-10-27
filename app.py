@@ -75,8 +75,24 @@ st.dataframe(fastest_laps_summary)
 # Display interactive session-level insights and other key metrics
 st.sidebar.header("Additional Analysis")
 if st.sidebar.checkbox("Show Top Speed"):
-    top_speeds = f1_session.laps.pick_quicklaps().get_car_data().Speed.max()
-    st.write(f"Top Speed for {session}: {top_speeds:.2f} km/h")
+    # Get the fastest lap for each driver
+    fastest_laps = f1_session.laps.pick_quicklaps()
+    top_speeds = []
+
+    # Iterate through each driver's fastest lap and record top speed
+    for drv in f1_session.drivers:
+        driver_fastest_lap = fastest_laps.pick_driver(drv).pick_fastest()
+        if driver_fastest_lap is not None:
+            driver_telemetry = driver_fastest_lap.get_car_data()
+            max_speed = driver_telemetry['Speed'].max()
+            top_speeds.append((drv, max_speed))
+
+    # Find the overall top speed and driver
+    if top_speeds:
+        top_speed_driver, top_speed = max(top_speeds, key=lambda x: x[1])
+        st.write(f"Top Speed for {session}: {top_speed:.2f} km/h (Driver: {top_speed_driver})")
+    else:
+        st.write("No top speed data available for this session.")
 
 # Session Summary
 st.markdown("### Session Summary")
