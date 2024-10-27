@@ -6,7 +6,7 @@ import plotly.express as px
 from fastf1 import plotting
 
 # Enable caching for FastF1 data to improve performance
-ff1.Cache.enable_cache('./cache')  
+ff1.Cache.enable_cache('./f1_cache')  
 
 # Set up Streamlit page
 st.title("F1 Data Insights - AI-Powered Product Manager Portfolio")
@@ -33,17 +33,17 @@ f1_session.load()
 st.subheader(f"{race} - {session}")
 st.write(f"Location: {event['Country']}, Date: {event['EventDate']}")
 
-# Driver Analysis
-driver = st.sidebar.selectbox("Select Driver", f1_session.drivers)
-driver_laps = f1_session.laps.pick_driver(driver)  # Filter only selected driver's laps
-st.subheader(f"Driver: {driver} - Analysis")
+# Map driver names to driver numbers for selection
+driver_map = {f1_session.get_driver(drv)["fullName"]: drv for drv in f1_session.drivers}
+driver_name = st.sidebar.selectbox("Select Driver", list(driver_map.keys()))
+driver_number = driver_map[driver_name]  # Map selected name back to driver number
+driver_laps = f1_session.laps.pick_driver(driver_number)  # Filter only selected driver's laps
+st.subheader(f"Driver: {driver_name} - Analysis")
 
 # Plotting Telemetry Data for a specific lap
 st.markdown("### Lap Telemetry Data")
 lap_number = st.sidebar.selectbox("Select Lap", driver_laps['LapNumber'].unique())
 selected_lap = driver_laps[driver_laps['LapNumber'] == lap_number].iloc[0]  # Ensure selecting only one lap
-
-# Extract telemetry data directly from the specific lap
 lap_telemetry = selected_lap.get_telemetry().add_distance()  # Get telemetry for the selected lap
 
 # Plot telemetry
@@ -63,29 +63,27 @@ st.dataframe(sector_times)
 if session == "R":
     st.markdown("### Cumulative Lap Times for Race Session")
     cumulative_times = driver_laps[['LapNumber', 'LapTime']].dropna()
-    fig_cum = px.line(cumulative_times, x="LapNumber", y="LapTime", title=f"{driver} Cumulative Lap Times")
+    fig_cum = px.line(cumulative_times, x="LapNumber", y="LapTime", title=f"{driver_name} Cumulative Lap Times")
     st.plotly_chart(fig_cum)
 
 # Fastest Laps of All Drivers
 st.markdown("### Fastest Laps of All Drivers")
 fastest_laps = f1_session.laps.pick_quicklaps()
 fastest_laps_summary = fastest_laps[['Driver', 'LapTime']].sort_values('LapTime')
+fastest_laps_summary['Driver'] = fastest_laps_summary['Driver'].apply(lambda x: f1_session.get_driver(x)["fullName"])  # Convert driver numbers to names
 st.dataframe(fastest_laps_summary)
 
 # Display interactive session-level insights and other key metrics
 st.sidebar.header("Additional Analysis")
 if st.sidebar.checkbox("Show Top Speed"):
-    # Get the fastest lap for each driver
-    fastest_laps = f1_session.laps.pick_quicklaps()
+    # Get the fastest lap for each driver and calculate the top speed
     top_speeds = []
-
-    # Iterate through each driver's fastest lap and record top speed
     for drv in f1_session.drivers:
         driver_fastest_lap = fastest_laps.pick_driver(drv).pick_fastest()
         if driver_fastest_lap is not None:
             driver_telemetry = driver_fastest_lap.get_car_data()
             max_speed = driver_telemetry['Speed'].max()
-            top_speeds.append((drv, max_speed))
+            top_speeds.append((f1_session.get_driver(drv)["fullName"], max_speed))  # Store name instead of number
 
     # Find the overall top speed and driver
     if top_speeds:
@@ -96,4 +94,6 @@ if st.sidebar.checkbox("Show Top Speed"):
 
 # Session Summary
 st.markdown("### Session Summary")
-st.write(f1_session.results[['Abbreviation', 'Position', 'Points', 'Time']])
+session_summary = f1_session.results[['Abbreviation', 'Position', 'Points', 'Time']]
+session_summary['Driver'] = session_summary['Abbreviation'].apply(lambda x: f1_session.get_driver(x)["fullName"])  # Map driver abbreviation to full name
+st.write(session_summary)
