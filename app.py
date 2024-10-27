@@ -6,7 +6,7 @@ import plotly.express as px
 from fastf1 import plotting
 
 # Enable caching for FastF1 data to improve performance
-ff1.Cache.enable_cache('./f1_cache')  
+ff1.Cache.enable_cache('./cache')  
 
 # Set up Streamlit page
 st.title("F1 Data Insights - AI-Powered Product Manager Portfolio")
