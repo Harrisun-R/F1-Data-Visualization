@@ -9,18 +9,21 @@ from fastf1 import plotting
 ff1.Cache.enable_cache('./cache')  
 
 # Set up Streamlit page
-st.title("F1 Data Insights - AI-Powered Product Manager Portfolio")
+st.title("F1 Data Insights")
 st.markdown("""
     This app showcases Formula 1 data using the FastF1 library, demonstrating data analysis skills for an AI-powered product manager.
 """)
 
 # Select Season and Race Options
 st.sidebar.header("F1 Data Explorer")
-year = st.sidebar.selectbox("Select Season", range(2023, 2018, -1))
-race = st.sidebar.selectbox("Select Race", [r['EventName'] for r in ff1.get_event_schedule(year)])
+year = st.sidebar.selectbox("Select Season", range(2024, 2018, -1))
+event_schedule = ff1.get_event_schedule(year)
+
+#Display available races in the selected season
+race_names = event_schedule['EventName'].tolist()
+race = st.sidebar.selectbox("Select Race", race_names)
 
 # Load Session Data
-event_schedule = ff1.get_event_schedule(year)
 event = event_schedule[event_schedule['EventName'] == race].iloc[0]
 session = st.sidebar.selectbox("Select Session", ["FP1", "FP2", "FP3", "Q", "R"])
 f1_session = ff1.get_session(event['EventDate'].year, event['EventName'], session)
