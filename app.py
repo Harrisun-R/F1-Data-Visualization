@@ -11,7 +11,7 @@ ff1.Cache.enable_cache('./cache')
 # Set up Streamlit page
 st.title("F1 Data Insights")
 st.markdown("""
-    This app showcases Formula 1 data using the FastF1 library, demonstrating data analysis skills for an AI-powered product manager.
+    This app showcases Formula 1 data using the FastF1 library, demonstrating data analysis skills.
 """)
 
 # Select Season and Race Options
@@ -35,7 +35,7 @@ st.write(f"Location: {event['Country']}, Date: {event['EventDate']}")
 
 # Driver Analysis
 driver = st.sidebar.selectbox("Select Driver", f1_session.drivers)
-driver_data = f1_session.laps.pick_driver(driver)
+driver_laps = f1_session.laps.pick_driver(driver)
 st.subheader(f"Driver: {driver} - Analysis")
 
 # Plotting Telemetry Data for specific lap
