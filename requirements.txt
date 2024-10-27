@@ -1,9 +1,7 @@
 streamlit
-requests
+fastf1==3.4.0
 pandas
 plotly
 matplotlib
 seaborn
 scikit-learn
-numpy
-fastf1
