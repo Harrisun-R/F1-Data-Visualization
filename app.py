@@ -38,10 +38,12 @@ driver = st.sidebar.selectbox("Select Driver", f1_session.drivers)
 driver_data = f1_session.laps.pick_driver(driver)
 st.subheader(f"Driver: {driver} - Analysis")
 
-# Plotting Telemetry Data
+# Plotting Telemetry Data for specific lap
 st.markdown("### Lap Telemetry Data")
-lap = st.sidebar.selectbox("Select Lap", driver_data.index)
-lap_telemetry = driver_data.loc[lap].get_car_data().add_distance()
+lap = st.sidebar.selectbox("Select Lap", driver_data['LapNumber'])
+selected_lap = driver_data[driver_data['LapNumber'] == lap].iloc[0]
+lap_telemetry = seleccted_lap.get_car_data().add_distance()
+
 fig, ax = plt.subplots()
 ax.plot(lap_telemetry['Distance'], lap_telemetry['Speed'], label="Speed")
 ax.set_xlabel("Distance (m)")
